@@ -15,13 +15,13 @@ const ML = (() => {
       dup:rows.length-new Set(rows.map(r=>JSON.stringify(r))).size,
       chol0:rows.filter(r=>r.Cholesterol===0).length, bp0:rows.filter(r=>r.RestingBP===0).length};
   }
-  function clean(raw){
+  function clean(raw,strat="median"){
     const seen=new Set(), rows=[];
     for(const r of raw){ const k=JSON.stringify(r); if(!seen.has(k)){seen.add(k); rows.push({...r});} }
     const ok = rows.filter(r=>r.RestingBP>0);
-    const med = median(ok.filter(r=>r.Cholesterol>0).map(r=>r.Cholesterol));
+    const cv = ok.filter(r=>r.Cholesterol>0).map(r=>r.Cholesterol), med = +(strat==="mean"?mean(cv):median(cv)).toFixed(1);
     ok.forEach(r=>{ if(r.Cholesterol===0) r.Cholesterol=med; });
-    return {rows:ok, before:stats(raw), after:stats(ok), med};
+    return {rows:ok, before:stats(raw), after:stats(ok), med, strat};
   }
   function rng(a){ return ()=>{ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
   function split(X,y,testFrac,seed){ // stratified
@@ -45,11 +45,12 @@ const ML = (() => {
     }
     const f=x=>{ let z=b; for(let j=0;j<d;j++) z+=w[j]*x[j]; return 1/(1+Math.exp(-z)); }; f.w=w; return f;
   }
+  let IMP=[];
   function tree(X,y,idx,R,m){
     const n=idx.length,n1=idx.reduce((s,i)=>s+y[i],0);
     if(n1===0||n1===n||n<2) return {p:n1/n};
     const d=X[0].length; let best=null,bg=Infinity;
-    const fs=[...Array(d).keys()].sort(()=>R()-0.5).slice(0,m);
+    const fs=[...Array(d).keys()]; for(let i=d-1;i>0;i--){ const j=Math.floor(R()*(i+1)); [fs[i],fs[j]]=[fs[j],fs[i]]; } fs.length=m;
     for(const f of fs){
       const s=[...idx].sort((a,b)=>X[a][f]-X[b][f]); let l1=0;
       for(let k=0;k<n-1;k++){
@@ -60,14 +61,15 @@ const ML = (() => {
       }
     }
     if(!best) return {p:n1/n};
+    IMP[best[0]]+=n*(1-(n1/n)**2-((n-n1)/n)**2)-bg;
     return {f:best[0],t:best[1],
       l:tree(X,y,idx.filter(i=>X[i][best[0]]<=best[1]),R,m), r:tree(X,y,idx.filter(i=>X[i][best[0]]>best[1]),R,m)};
   }
   const walk=(t,x)=>{ while(t.f!==undefined) t=x[t.f]<=t.t?t.l:t.r; return t.p; };
   function trainRF(X,y,T,seed){
-    const R=rng(seed),n=X.length,m=Math.floor(Math.sqrt(X[0].length)),ts=[];
+    const R=rng(seed),n=X.length,m=Math.floor(Math.sqrt(X[0].length)),ts=[]; IMP=Array(X[0].length).fill(0);
     for(let t=0;t<T;t++) ts.push(tree(X,y,Array.from({length:n},()=>Math.floor(R()*n)),R,m));
-    return x=>ts.reduce((s,t)=>s+walk(t,x),0)/T;
+    const f=x=>ts.reduce((s,t)=>s+walk(t,x),0)/T, tot=IMP.reduce((s,v)=>s+v,0)||1; f.imp=IMP.map(v=>v/tot); return f;
   }
   function metrics(p,y){
     let tp=0,fp=0,tn=0,fn=0;
@@ -75,15 +77,24 @@ const ML = (() => {
     const pr=tp/(tp+fp||1), rc=tp/(tp+fn||1);
     return {acc:(tp+tn)/y.length, pr, rc, f1:2*pr*rc/(pr+rc||1), tp,fp,tn,fn};
   }
+  function roc(p,y){
+    const o=p.map((v,i)=>[v,y[i]]).sort((a,b)=>b[0]-a[0]), P=y.reduce((s,v)=>s+v,0), N=y.length-P;
+    let tp=0,fp=0,auc=0; const pts=[{x:0,y:0}];
+    o.forEach(([v,l],i)=>{ l?tp++:fp++;
+      if(i===o.length-1||o[i+1][0]!==v){ const x=fp/N,yy=tp/P,q=pts[pts.length-1]; auc+=(x-q.x)*(yy+q.y)/2; pts.push({x,y:yy}); } });
+    return {pts,auc};
+  }
   function corr(a,b){ const ma=mean(a),mb=mean(b); let s=0,sa=0,sb=0; a.forEach((v,i)=>{s+=(v-ma)*(b[i]-mb);sa+=(v-ma)**2;sb+=(b[i]-mb)**2;}); return s/Math.sqrt(sa*sb||1); }
 
   function run(rows,{testFrac=0.2,seed=42,trees=200}={}){
     const X=rows.map(enc), y=rows.map(r=>+r.HeartDisease), {tr,te}=split(X,y,testFrac,seed);
     const sc=fitScaler(tr.map(i=>X[i]));
     const Xtr=tr.map(i=>applyScaler(X[i],sc)), Xte=te.map(i=>applyScaler(X[i],sc)), ytr=tr.map(i=>y[i]), yte=te.map(i=>y[i]);
-    const lr=trainLR(Xtr,ytr), rf=trainRF(Xtr,ytr,trees,seed);
-    return {X,y,tr,te,sc,ytr,yte,Xtr,models:{"Logistic Regression":lr,"Random Forest":rf},
-      scores:{"Logistic Regression":metrics(Xte.map(lr),yte),"Random Forest":metrics(Xte.map(rf),yte)}};
+    const lr=trainLR(Xtr,ytr), rf=trainRF(Xtr,ytr,trees,seed), models={"Logistic Regression":lr,"Random Forest":rf};
+    const ps=Object.fromEntries(Object.entries(models).map(([k,f])=>[k,Xte.map(f)]));
+    return {X,y,tr,te,sc,ytr,yte,Xtr,models,
+      scores:Object.fromEntries(Object.entries(ps).map(([k,p])=>[k,metrics(p,yte)])),
+      roc:Object.fromEntries(Object.entries(ps).map(([k,p])=>[k,roc(p,yte)]))};
   }
   return {NUM,CATS,names,enc,clean,run,corr,applyScaler,median};
 })();
