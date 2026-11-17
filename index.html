@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prediksi Penyakit Jantung</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🫀%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#12263A;--teal:#0E7C86;--coral:#D64550;--mist:#F3F6F8;--line:#D5DEE5}
+*{box-sizing:border-box}body{margin:0;background:var(--mist);color:var(--ink);font:16px/1.55 'IBM Plex Sans',system-ui,sans-serif}
+h1,h2,h3{font-family:'Source Serif 4',Georgia,serif;letter-spacing:-.01em;margin:0 0 .5rem}
+main{max-width:1100px;margin:0 auto;padding:1rem}
+.hero{background:var(--ink);color:#fff;border-radius:10px;padding:1.6rem 1.8rem 1rem;overflow:hidden}
+.hero h1{font-size:clamp(1.8rem,5vw,2.5rem);line-height:1.1}.hero p{color:#B9C7D4;max-width:44rem;margin:0}
+.hero svg{display:block;width:100%;height:64px;margin-top:1rem}
+.hero polyline{fill:none;stroke:#4FD1C5;stroke-width:2.2;stroke-linejoin:round;stroke-dasharray:2400;stroke-dashoffset:2400;animation:tr 3s ease-out forwards}
+@keyframes tr{to{stroke-dashoffset:0}}@media(prefers-reduced-motion:reduce){.hero polyline{animation:none;stroke-dashoffset:0}}
+nav{display:flex;flex-wrap:wrap;gap:.25rem;margin:1rem 0;border-bottom:1px solid var(--line)}
+nav button{background:none;border:0;padding:.6rem .9rem;font:inherit;color:#4A5A6A;cursor:pointer;border-radius:6px 6px 0 0}
+nav button[aria-selected=true]{background:#fff;color:var(--teal);font-weight:600;box-shadow:inset 0 -3px var(--teal)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--coral);outline-offset:2px}
+section{display:none}section.on{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem;margin:.75rem 0}
+.card{background:#fff;border:1px solid var(--line);border-radius:6px;padding:.7rem 1rem}
+.stat{border-left:4px solid var(--teal)}.stat b{display:block;font-size:1.5rem}.stat span{color:#5B6B7B;font-size:.9rem}
+.note{background:#fff;border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:6px;padding:.7rem 1rem;margin:.75rem 0}
+.note.warn{border-left-color:var(--coral)}
+.btn{background:var(--teal);color:#fff;border:0;border-radius:6px;padding:.55rem 1.1rem;font:600 1rem inherit;cursor:pointer}.btn:hover{background:#0A636B}.btn.alt{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.tw{overflow-x:auto;margin:.5rem 0}table{border-collapse:collapse;width:100%;background:#fff;font-size:.9rem}
+th,td{border:1px solid var(--line);padding:.35rem .6rem;text-align:left;white-space:nowrap}th{background:#E6EEF3}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem}
+canvas{background:#fff;border:1px solid var(--line);border-radius:6px;padding:.5rem}
+form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem}
+label{display:block;font-size:.9rem;color:#4A5A6A}input,select{width:100%;padding:.5rem;border:1px solid var(--line);border-radius:6px;font:inherit;background:#fff}
+.res{border-radius:10px;padding:1rem 1.2rem;color:#fff;margin:1rem 0}.res h3{color:#fff;margin:0}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem}.gal img{width:100%;border-radius:6px;border:1px solid var(--line)}
+#st{color:#5B6B7B;margin:.5rem 0}
+</style></head><body><main>
+<header class="hero"><h1>Prediksi penyakit jantung</h1>
+<p>Pipeline Machine Learning dari data mentah sampai model, berjalan langsung di browser Anda.</p>
+<svg viewBox="0 0 808 100" preserveAspectRatio="none" aria-hidden="true"><polyline vector-effect="non-scaling-stroke" id="ecg"/></svg></header>
+<nav role="tablist" id="nav"></nav><div id="st"></div>
+
+<section id="s0"><h2>Data</h2>
+<div class="note">Sumber: <a href="https://www.kaggle.com/datasets/fedesoriano/heart-failure-prediction" target="_blank" rel="noopener">Heart Failure Prediction (Kaggle)</a>. Pilih salah satu cara memuat data.</div>
+<p><input type="file" id="file" accept=".csv" style="max-width:320px">
+<button class="btn alt" id="bSample">Muat heart.csv bawaan situs</button>
+<button class="btn alt" id="bDb">Muat dari Supabase</button></p>
+<div id="dataOut"></div></section>
+<section id="s1"><h2>Pembersihan data</h2><div id="cleanOut"></div></section>
+<section id="s2"><h2>Exploratory data analysis</h2><div id="edaOut"></div></section>
+<section id="s3"><h2>Preprocessing dan pembagian data</h2><div id="preOut"></div></section>
+<section id="s4"><h2>Model dan evaluasi</h2><div id="modOut"></div></section>
+<section id="s5"><h2>Coba prediksi pasien baru</h2><div class="note warn">Hanya demonstrasi tugas kuliah, bukan alat diagnosis.</div>
+<form id="pf"></form><div id="predOut"></div></section>
+<section id="s6"><h2>Admin</h2><div id="admOut"></div></section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script><script src="ml.js"></script>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const C=window.APP_CONFIG||{},sb=(C.SUPABASE_URL&&C.SUPABASE_ANON_KEY&&window.supabase)?supabase.createClient(C.SUPABASE_URL,C.SUPABASE_ANON_KEY):null;
+const TEAL="#0E7C86",CORAL="#D64550",f3=v=>v.toFixed(3),pct=v=>(v*100).toFixed(1)+"%";
+const REQ=["Age","Sex","ChestPainType","RestingBP","Cholesterol","FastingBS","RestingECG","MaxHR","ExerciseAngina","Oldpeak","ST_Slope","HeartDisease"];
+let S=null,charts={};
+// ECG
+{const b=[[0,50],[30,50],[42,40],[54,50],[80,50],[92,56],[104,6],[116,92],[128,50],[160,50],[178,34],[202,50]];$("#ecg").setAttribute("points",[0,1,2,3].flatMap(k=>b.map(([x,y])=>(x+202*k)+","+y)).join(" "))}
+// Tabs
+const T=["Data","Pembersihan","EDA","Preprocessing","Model","Prediksi","Admin"];
+$("#nav").innerHTML=T.map((t,i)=>`<button role="tab" data-i="${i}" aria-selected="${i==0}">${i<5?i+1+" ":""}${t}</button>`).join("");
+$("#nav").onclick=e=>{const i=e.target.dataset.i;if(i===undefined)return;document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-selected",b.dataset.i===i));document.querySelectorAll("section").forEach((s,k)=>s.classList.toggle("on",k==i));if(i==6)admin()};
+$("#s0").classList.add("on");
+const tbl=(h,rows)=>`<div class="tw"><table><tr>${h.map(x=>`<th>${esc(x)}</th>`).join("")}</tr>${rows.map(r=>`<tr>${r.map(x=>`<td>${esc(x)}</td>`).join("")}</tr>`).join("")}</table></div>`;
+const stat=(l,v)=>`<div class="card stat"><b>${esc(v)}</b><span>${esc(l)}</span></div>`;
+function chart(id,cfg){charts[id]?.destroy();charts[id]=new Chart($("#"+id),{...cfg,options:{responsive:true,...cfg.options}})}
+const cv=id=>`<canvas id="${id}"></canvas>`;
+// Load data
+function load(text){const p=Papa.parse(text,{header:true,dynamicTyping:true,skipEmptyLines:true});
+ const miss=REQ.filter(c=>!p.meta.fields.includes(c));if(miss.length)return $("#st").textContent="Kolom tidak ditemukan: "+miss.join(", ");
+ start(p.data)}
+$("#file").onchange=e=>e.target.files[0]?.text().then(load);
+$("#bSample").onclick=()=>fetch("heart.csv").then(r=>{if(!r.ok)throw 0;return r.text()}).then(load).catch(()=>$("#st").textContent="heart.csv tidak ada di situs. Taruh file itu di folder yang sama dengan index.html, atau unggah manual.");
+$("#bDb").onclick=async()=>{if(!sb)return $("#st").textContent="Supabase belum diatur di config.js.";let all=[],from=0;
+ while(true){const {data,error}=await sb.from("heart_data").select("Age,Sex,ChestPainType,RestingBP,Cholesterol,FastingBS,RestingECG,MaxHR,ExerciseAngina,Oldpeak,ST_Slope,HeartDisease").range(from,from+999);
+  if(error)return $("#st").textContent="Gagal membaca Supabase: "+error.message;all.push(...data);if(data.length<1000)break;from+=1000}
+ all.length?start(all):$("#st").textContent="Tabel heart_data masih kosong. Login admin lalu simpan dataset."};
+function start(raw){S={raw};$("#st").textContent="Memproses…";setTimeout(()=>{
+ const c=ML.clean(raw);S.c=c;S.rows=c.rows;S.m=ML.run(c.rows);$("#st").textContent="";render();$("#nav button[data-i='1']").click()},30)}
+function render(){const {raw,c,rows,m}=S,b=c.before,a=c.after;
+ $("#dataOut").innerHTML=`<div class="grid">${stat("Baris",raw.length)}${stat("Kolom",Object.keys(raw[0]).length)}${stat("Prediktor",11)}${stat("Target","HeartDisease")}</div>
+ <h3>Sepuluh data pertama</h3>${tbl(REQ,raw.slice(0,10).map(r=>REQ.map(k=>r[k])))}
+ <div class="note"><b>Target:</b> HeartDisease (0 sehat, 1 penyakit jantung), jadi ini klasifikasi biner (supervised learning).</div>`;
+ const R=[["Jumlah baris",b.rows,a.rows],["Missing value",b.missing,a.missing],["Duplikat",b.dup,a.dup],["Cholesterol = 0",b.chol0,a.chol0],["RestingBP = 0",b.bp0,a.bp0]];
+ $("#cleanOut").innerHTML=`${tbl(["Aspek","Sebelum","Sesudah"],R)}<div class="note">RestingBP = 0 dihapus. Cholesterol = 0 diganti median (${c.med}) agar data tidak terbuang banyak.</div>
+ <button class="btn" id="dl">Unduh data bersih (CSV)</button>`;
+ $("#dl").onclick=()=>{const u=URL.createObjectURL(new Blob([Papa.unparse(rows)],{type:"text/csv"}));Object.assign(document.createElement("a"),{href:u,download:"heart_clean.csv"}).click()};
+ eda();pre();model();predForm()}
+function eda(){const {rows}=S,n1=rows.filter(r=>r.HeartDisease).length,nums=["Age","RestingBP","Cholesterol","FastingBS","MaxHR","Oldpeak"],cats=["Sex","ChestPainType","RestingECG","ExerciseAngina","ST_Slope"];
+ const opt=a=>a.map(x=>`<option>${x}</option>`).join("");
+ $("#edaOut").innerHTML=`<div class="grid">${stat("Sehat",rows.length-n1)}${stat("Penyakit jantung",n1)}${stat("Proporsi sakit",pct(n1/rows.length))}</div>
+ <div class="two"><div><h3>Distribusi fitur numerik</h3><select id="fn" aria-label="Fitur numerik">${opt(nums)}</select>${cv("c1")}</div>
+ <div><h3>Fitur kategorikal vs target</h3><select id="fc" aria-label="Fitur kategorikal">${opt(cats)}</select>${cv("c2")}</div></div>
+ <h3>Korelasi fitur dengan target</h3>${cv("c3")}<div id="edaNote" class="note"></div>
+ <h3>Statistik deskriptif</h3><div id="desc"></div>`;
+ const hist=()=>{const f=$("#fn").value,v=rows.map(r=>r[f]),lo=Math.min(...v),hi=Math.max(...v),k=12,w=(hi-lo)/k||1,bins=[0,1].map(()=>Array(k).fill(0));
+  rows.forEach(r=>bins[r.HeartDisease][Math.min(k-1,Math.floor((r[f]-lo)/w))]++);
+  chart("c1",{type:"bar",data:{labels:bins[0].map((_,i)=>(lo+i*w).toFixed(1)),datasets:[{label:"Sehat",data:bins[0],backgroundColor:TEAL},{label:"Penyakit jantung",data:bins[1],backgroundColor:CORAL}]}})};
+ const cat=()=>{const f=$("#fc").value,ks=[...new Set(rows.map(r=>r[f]))];
+  chart("c2",{type:"bar",data:{labels:ks,datasets:[0,1].map(h=>({label:h?"Penyakit jantung":"Sehat",backgroundColor:h?CORAL:TEAL,data:ks.map(k=>rows.filter(r=>r[f]===k&&r.HeartDisease==h).length)}))}})};
+ $("#fn").onchange=hist;$("#fc").onchange=cat;hist();cat();
+ const y=S.m.y,cr=ML.names.map((nm,j)=>[nm,ML.corr(S.m.X.map(x=>x[j]),y)]).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+ chart("c3",{type:"bar",data:{labels:cr.map(x=>x[0]),datasets:[{label:"Korelasi dengan HeartDisease",data:cr.map(x=>+x[1].toFixed(3)),backgroundColor:cr.map(x=>x[1]>0?CORAL:TEAL)}]},options:{indexAxis:"y"}});
+ $("#edaNote").innerHTML=`Korelasi terkuat: <b>${cr[0][0]}</b> (${f3(cr[0][1])}) dan <b>${cr[1][0]}</b> (${f3(cr[1][1])}). Merah berarti hubungan positif dengan penyakit jantung, hijau-biru negatif.`;
+ $("#desc").innerHTML=tbl(["Fitur","Rata-rata","Min","Maks"],nums.map(f=>{const v=rows.map(r=>r[f]);return[f,f3(v.reduce((s,x)=>s+x,0)/v.length),Math.min(...v),Math.max(...v)]}))}
+function pre(){const m=S.m;$("#preOut").innerHTML=`<div class="note"><b>Encoding:</b> Sex dan ExerciseAngina menjadi 0/1; ChestPainType, RestingECG, ST_Slope memakai one-hot (<code>drop_first</code>), sehingga ada ${ML.names.length} fitur. <b>Standardisasi</b> (Z-score) untuk ${ML.NUM.join(", ")}, dihitung hanya dari data latih agar tidak terjadi data leakage.</div>
+ <div class="grid">${stat("Total data",S.rows.length)}${stat("Training",m.tr.length+" (80%)")}${stat("Testing",m.te.length+" (20%)")}${stat("random_state",42)}</div>
+ <h3>Lima data pertama setelah encoding</h3>${tbl(ML.names,S.m.X.slice(0,5).map(r=>r.map(v=>+(+v).toFixed(2))))}
+ <div class="note">Rasio 80:20 cukup untuk dataset kecil; pembagian stratified menjaga proporsi kelas tetap sama di data latih dan uji.</div>`}
+function model(){const sc=S.m.scores,names=Object.keys(sc),best=names.sort((a,b)=>sc[b].f1-sc[a].f1)[0];
+ $("#modOut").innerHTML=`${tbl(["Model","Akurasi","Precision (kelas 1)","Recall (kelas 1)","F1-score (kelas 1)"],Object.keys(sc).map(k=>[k,f3(sc[k].acc),f3(sc[k].pr),f3(sc[k].rc),f3(sc[k].f1)]))}
+ <div class="two">${Object.keys(sc).map(k=>`<div><h3>${k}</h3>${tbl(["","Prediksi sehat","Prediksi sakit"],[["Aktual sehat",sc[k].tn,sc[k].fp],["Aktual sakit",sc[k].fn,sc[k].tp]])}</div>`).join("")}</div>
+ <div class="note"><b>Interpretasi:</b> ${best} memiliki F1-score kelas 1 tertinggi (${f3(sc[best].f1)}) dengan recall ${f3(sc[best].rc)}. Pada kasus medis, recall kelas 1 penting karena melewatkan pasien sakit (false negative) lebih berbahaya daripada salah menandai pasien sehat.</div>
+ <div class="note warn">Model dilatih ulang di browser dengan implementasi JavaScript, jadi angkanya bisa berbeda tipis dari scikit-learn di Colab. Untuk laporan, gunakan angka dari Colab.</div>`}
+function predForm(){const o=(a,d)=>a.map(x=>`<option${x===d?" selected":""}>${x}</option>`).join(""),n=(id,l,v,lo,hi,s=1)=>`<label>${l}<input id="${id}" type="number" value="${v}" min="${lo}" max="${hi}" step="${s}"></label>`,s=(id,l,a,d)=>`<label>${l}<select id="${id}">${o(a,d)}</select></label>`;
+ $("#pf").innerHTML=n("Age","Usia",54,20,90)+s("Sex","Jenis kelamin (M/F)",["M","F"],"M")+s("ChestPainType","Tipe nyeri dada",["ASY","ATA","NAP","TA"],"ASY")+n("RestingBP","Tekanan darah (mm Hg)",130,70,220)+n("Cholesterol","Kolesterol (mg/dl)",240,80,620)+s("FastingBS","Gula darah puasa > 120 (1=ya)",["0","1"],"0")+s("RestingECG","EKG istirahat",["Normal","ST","LVH"],"Normal")+n("MaxHR","Detak jantung maks",138,55,210)+s("ExerciseAngina","Angina olahraga",["N","Y"],"N")+n("Oldpeak","Oldpeak",0.8,-3,7,0.1)+s("ST_Slope","ST_Slope",["Up","Flat","Down"],"Flat")+`<div style="align-self:end"><button class="btn" type="submit">Hitung risiko</button></div>`}
+$("#pf").onsubmit=async e=>{e.preventDefault();if(!S)return $("#predOut").innerHTML='<div class="note warn">Muat data di tab Data terlebih dahulu.</div>';
+ const row={};REQ.slice(0,11).forEach(k=>{const v=$("#"+k).value;row[k]=isNaN(v)?v:+v});
+ const x=ML.applyScaler(ML.enc(row),S.m.sc),p=Object.fromEntries(Object.entries(S.m.models).map(([k,f])=>[k,f(x)])),avg=(p["Logistic Regression"]+p["Random Forest"])/2,hi=avg>=.5;
+ $("#predOut").innerHTML=`<div class="res" style="background:${hi?CORAL:TEAL}"><h3>${hi?"Risiko tinggi":"Risiko rendah"} penyakit jantung</h3>Rata-rata probabilitas: ${pct(avg)} (Logistic Regression ${pct(p["Logistic Regression"])}, Random Forest ${pct(p["Random Forest"])})</div>`;
+ if(sb)sb.from("predictions").insert({input:row,prob_lr:p["Logistic Regression"],prob_rf:p["Random Forest"]}).then(({error})=>{if(error)console.warn(error.message)})};
+// Admin
+async function admin(){const o=$("#admOut");if(!sb)return o.innerHTML='<div class="note warn">Supabase belum diatur. Isi <code>config.js</code> (lihat README).</div>';
+ const {data:{session}}=await sb.auth.getSession();
+ if(!session){o.innerHTML=`<form id="lf" style="max-width:360px"><label>Email<input id="em" type="email" required autocomplete="username"></label><label>Kata sandi<input id="pw" type="password" required autocomplete="current-password"></label><div><button class="btn" type="submit">Masuk</button></div></form><p id="lm"></p>`;
+  $("#lf").onsubmit=async e=>{e.preventDefault();const {error}=await sb.auth.signInWithPassword({email:$("#em").value,password:$("#pw").value});error?$("#lm").textContent="Gagal masuk: "+error.message:admin()};return}
+ const {data:h,error}=await sb.from("predictions").select("*").order("created_at",{ascending:false}).limit(20);
+ const {data:g}=await sb.storage.from("screenshots").list("",{limit:60,sortBy:{column:"created_at",order:"desc"}});
+ o.innerHTML=`<p>Masuk sebagai <b>${esc(session.user.email)}</b> <button class="btn alt" id="lo">Keluar</button></p>
+ <h3>Dataset</h3><button class="btn" id="sv" ${S?"":"disabled"}>Simpan dataset yang sedang dimuat ke Supabase</button> <span id="sm"></span>
+ <h3>Riwayat prediksi terbaru</h3>${error?esc(error.message):tbl(["Waktu","Usia","Risiko LR","Risiko RF"],(h||[]).map(r=>[new Date(r.created_at).toLocaleString("id-ID"),r.input.Age,pct(r.prob_lr),pct(r.prob_rf)]))}
+ <h3>Foto screenshot laporan</h3><input type="file" id="up" accept="image/*" style="max-width:320px"> <span id="um"></span>
+ <div class="gal">${(g||[]).filter(f=>f.name!==".emptyFolderPlaceholder").map(f=>`<a href="${sb.storage.from("screenshots").getPublicUrl(f.name).data.publicUrl}" target="_blank" rel="noopener"><img loading="lazy" alt="${esc(f.name)}" src="${sb.storage.from("screenshots").getPublicUrl(f.name).data.publicUrl}"></a>`).join("")}</div>`;
+ $("#lo").onclick=()=>sb.auth.signOut().then(admin);
+ $("#sv").onclick=async()=>{const r=S.raw.map(x=>Object.fromEntries(REQ.map(k=>[k,x[k]])));$("#sm").textContent="Menyimpan…";
+  for(let i=0;i<r.length;i+=500){const {error}=await sb.from("heart_data").insert(r.slice(i,i+500));if(error)return $("#sm").textContent="Gagal: "+error.message}
+  $("#sm").textContent="Tersimpan "+r.length+" baris (data mentah)."};
+ $("#up").onchange=async e=>{const f=e.target.files[0];if(!f)return;$("#um").textContent="Mengunggah…";
+  const {error}=await sb.storage.from("screenshots").upload(Date.now()+"-"+f.name.replace(/[^\w.-]/g,"_"),f);error?$("#um").textContent="Gagal: "+error.message:admin()}}
+</script></body></html>
