@@ -1,6 +1,6 @@
 // Isi dengan data dari Supabase: Project Settings > API.
 // Gunakan anon/public key. JANGAN pernah memasukkan service_role key di sini.
 window.APP_CONFIG = {
-  SUPABASE_URL: "",       // contoh: "https://abcdefgh.supabase.co"
-  SUPABASE_ANON_KEY: ""   // contoh: "eyJhbGciOi..."
+  SUPABASE_URL: "https://zljtemvmkrryntexunwp.supabase.co/rest/v1/",       // contoh: "https://abcdefgh.supabase.co"
+  SUPABASE_ANON_KEY: "sb_publishable_wRpXO6JGOu7NGmlh7KYbEw_3R8-Py3g"   // contoh: "eyJhbGciOi..."
 };
