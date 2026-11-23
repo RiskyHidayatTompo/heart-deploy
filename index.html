@@ -34,7 +34,7 @@ label{display:block;font-size:.9rem;color:#4A5A6A}input,select{width:100%;paddin
 .res{border-radius:10px;padding:1rem 1.2rem;color:#fff;margin:1rem 0}.res h3{color:#fff;margin:0}
 .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem}.gal img{width:100%;border-radius:6px;border:1px solid var(--line)}
 #st{color:#5B6B7B;margin:.5rem 0}
-.wrap{display:grid;grid-template-columns:240px 1fr;gap:1.2rem;align-items:start;margin-top:1rem}.wrap nav{margin-top:0}
+.wrap{display:grid;grid-template-columns:240px 1fr;gap:1.2rem;align-items:start;margin-top:1rem}.wrap nav{margin-top:0}.wrap>div{min-width:0}
 aside{position:sticky;top:.5rem}aside label,aside fieldset{margin-bottom:.8rem}aside fieldset{border:0;padding:0;margin-inline:0}aside legend{font-size:.9rem;color:#4A5A6A}
 input[type=radio]{width:auto;margin-right:.4rem}input[type=range]{padding:0}.small{font-size:.82rem;color:#5B6B7B}
 .hm td{text-align:center;font-weight:500}.box{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.5rem}.box svg{background:#fff;border:1px solid var(--line);border-radius:6px}
@@ -50,7 +50,7 @@ input[type=radio]{width:auto;margin-right:.4rem}input[type=range]{padding:0}.sma
 <fieldset><legend>Isi Cholesterol = 0 dengan</legend><label><input type="radio" name="im" value="median" checked>Median</label><label><input type="radio" name="im" value="mean">Rata-rata</label></fieldset>
 <button class="btn" id="ap" type="button">Terapkan dan latih ulang</button>
 <p class="small">Untuk laporan, pakai pengaturan awal (20%, 42, 200 pohon, median) agar sebanding dengan Colab.</p></aside>
-<div><nav role="tablist" id="nav"></nav><div id="st"></div>
+<div><div id="who" class="small" style="text-align:right;min-height:1.4rem"></div><nav role="tablist" id="nav"></nav><div id="st"></div>
 
 <section id="s0"><h2>Data</h2>
 <div class="note">Sumber: <a href="https://www.kaggle.com/datasets/fedesoriano/heart-failure-prediction" target="_blank" rel="noopener">Heart Failure Prediction (Kaggle)</a>. Pilih salah satu cara memuat data.</div>
@@ -64,7 +64,8 @@ input[type=radio]{width:auto;margin-right:.4rem}input[type=range]{padding:0}.sma
 <section id="s4"><h2>Model dan evaluasi</h2><div id="modOut"></div></section>
 <section id="s5"><h2>Coba prediksi pasien baru</h2><div class="note warn">Hanya demonstrasi tugas kuliah, bukan alat diagnosis.</div>
 <form id="pf"></form><div id="predOut"></div></section>
-<section id="s6"><h2>Admin</h2><div id="admOut"></div></section></div></div>
+<section id="s6"><h2>Riwayat pemeriksaan</h2><div id="hisOut"></div></section>
+<section id="s7"><h2>Admin</h2><div id="admOut"></div></section></div></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -79,9 +80,9 @@ let S=null,charts={};
 // ECG
 {const b=[[0,50],[30,50],[42,40],[54,50],[80,50],[92,56],[104,6],[116,92],[128,50],[160,50],[178,34],[202,50]];$("#ecg").setAttribute("points",[0,1,2,3].flatMap(k=>b.map(([x,y])=>(x+202*k)+","+y)).join(" "))}
 // Tabs
-const T=["Data","Pembersihan","EDA","Preprocessing","Model","Prediksi","Admin"];
+const T=["Data","Pembersihan","EDA","Preprocessing","Model","Prediksi","Riwayat","Admin"];
 $("#nav").innerHTML=T.map((t,i)=>`<button role="tab" data-i="${i}" aria-selected="${i==0}">${i<5?i+1+" ":""}${t}</button>`).join("");
-$("#nav").onclick=e=>{const i=e.target.dataset.i;if(i===undefined)return;document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-selected",b.dataset.i===i));document.querySelectorAll("section").forEach((s,k)=>s.classList.toggle("on",k==i));if(i==6)admin()};
+$("#nav").onclick=e=>{const i=e.target.dataset.i;if(i===undefined)return;document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-selected",b.dataset.i===i));document.querySelectorAll("section").forEach((s,k)=>s.classList.toggle("on",k==i));if(i==6)riwayat();if(i==7)admin()};
 $("#s0").classList.add("on");
 const tbl=(h,rows)=>`<div class="tw"><table><tr>${h.map(x=>`<th>${esc(x)}</th>`).join("")}</tr>${rows.map(r=>`<tr>${r.map(x=>`<td>${esc(x)}</td>`).join("")}</tr>`).join("")}</table></div>`;
 const stat=(l,v)=>`<div class="card stat"><b>${esc(v)}</b><span>${esc(l)}</span></div>`;
@@ -97,6 +98,24 @@ const qt=(s,p)=>{const i=(s.length-1)*p,l=Math.floor(i);return s[l]+(s[Math.min(
 function box(v,name){const s=[...v].sort((a,b)=>a-b),q1=qt(s,.25),md=qt(s,.5),q3=qt(s,.75),iq=q3-q1,lo=s.find(x=>x>=q1-1.5*iq),hi=[...s].reverse().find(x=>x<=q3+1.5*iq),mn=s[0],mx=s[s.length-1],y=x=>10+(mx-x)/(mx-mn||1)*160,o=s.filter(x=>x<lo||x>hi);
  return `<svg viewBox="0 0 120 200" role="img" aria-label="Boxplot ${name}"><line x1="60" x2="60" y1="${y(hi)}" y2="${y(lo)}" stroke="#12263A"/><line x1="45" x2="75" y1="${y(hi)}" y2="${y(hi)}" stroke="#12263A"/><line x1="45" x2="75" y1="${y(lo)}" y2="${y(lo)}" stroke="#12263A"/><rect x="32" width="56" y="${y(q3)}" height="${Math.max(1,y(q1)-y(q3))}" fill="${TEAL}" fill-opacity=".35" stroke="${TEAL}" stroke-width="2"/><line x1="32" x2="88" y1="${y(md)}" y2="${y(md)}" stroke="${CORAL}" stroke-width="3"/>${o.map(x=>`<circle cx="60" cy="${y(x)}" r="2.2" fill="none" stroke="#12263A"/>`).join("")}<text x="2" y="14" font-size="9" fill="#5B6B7B">${+mx.toFixed(1)}</text><text x="2" y="178" font-size="9" fill="#5B6B7B">${+mn.toFixed(1)}</text><text x="60" y="195" text-anchor="middle" font-size="12" font-weight="600" fill="#12263A">${name}</text></svg>`}
 const hcol=v=>{const a=Math.abs(v),c=v>0?[214,69,80]:[14,124,134];return`rgb(${[0,1,2].map(i=>Math.round(255+(c[i]-255)*a))})`};
+// Autentikasi
+let USER=null;
+function authForm(o,done){let reg=false;const draw=()=>{o.innerHTML=`<div class="card" style="max-width:380px"><h3>${reg?"Daftar akun":"Masuk"}</h3><form class="af" style="display:block"><label>Email<input class="ae" type="email" required autocomplete="username"></label><label>Kata sandi (min. 6 karakter)<input class="ap2" type="password" required minlength="6" autocomplete="${reg?"new-password":"current-password"}"></label><button class="btn" type="submit">${reg?"Daftar":"Masuk"}</button> <button class="btn alt at" type="button">${reg?"Sudah punya akun? Masuk":"Belum punya akun? Daftar"}</button></form><p class="am" role="status"></p></div>`;
+ o.querySelector(".at").onclick=()=>{reg=!reg;draw()};
+ o.querySelector(".af").onsubmit=async e=>{e.preventDefault();const em=o.querySelector(".ae").value,pw=o.querySelector(".ap2").value,m=o.querySelector(".am");m.textContent="Memproses…";
+  const r=reg?await sb.auth.signUp({email:em,password:pw}):await sb.auth.signInWithPassword({email:em,password:pw});
+  if(r.error)return m.textContent=(reg?"Gagal daftar: ":"Gagal masuk: ")+r.error.message;
+  if(reg&&!r.data.session)return m.textContent="Pendaftaran berhasil. Cek email Anda untuk konfirmasi, lalu masuk.";
+  done&&done()}};draw()}
+const isAdmin=async()=>{const {data}=await sb.from("admins").select("user_id").eq("user_id",USER.id);return !!(data&&data.length)};
+function who(){const w=$("#who");if(!sb){w.textContent="";return}
+ w.innerHTML=USER?`Masuk sebagai <b>${esc(USER.email)}</b> <button class="btn alt" id="lo2" style="padding:.2rem .7rem">Keluar</button>`:"Belum masuk";
+ const b=$("#lo2");if(b)b.onclick=()=>sb.auth.signOut()}
+function predGate(){const need=!!sb&&!USER;$("#pf").style.display=need?"none":"";let a=$("#predAuth");if(!a){a=document.createElement("div");a.id="predAuth";$("#pf").before(a)}
+ if(need){a.innerHTML='<div class="note">Masuk terlebih dahulu untuk melakukan prediksi. Setiap hasil pemeriksaan akan tersimpan di tab Riwayat.</div><div id="pa"></div>';authForm($("#pa"))}else a.innerHTML=""}
+if(sb){sb.auth.getSession().then(({data})=>{USER=data.session?.user||null;who();predGate()});
+ sb.auth.onAuthStateChange((_e,s)=>{const was=USER?.id;USER=s?.user||null;who();predGate();if(was!==USER?.id){riwayat(true);if($("#s7").classList.contains("on"))admin()}})}
+else predGate();
 // Load data
 function load(text){const p=Papa.parse(text,{header:true,dynamicTyping:true,skipEmptyLines:true});
  const miss=REQ.filter(c=>!p.meta.fields.includes(c));if(miss.length)return $("#st").textContent="Kolom tidak ditemukan: "+miss.join(", ");
@@ -154,24 +173,33 @@ function model(){const sc=S.m.scores,names=Object.keys(sc),best=names.sort((a,b)
  chart("c6",{type:"bar",data:{labels:co.map(x=>x[0]),datasets:[{label:"Koefisien (fitur terstandardisasi)",data:co.map(x=>+x[1].toFixed(3)),backgroundColor:co.map(x=>x[1]>0?CORAL:TEAL)}]},options:nm})}
 function predForm(){const o=(a,d)=>a.map(x=>`<option${x===d?" selected":""}>${x}</option>`).join(""),n=(id,l,v,lo,hi,s=1)=>`<label>${l}<input id="${id}" type="number" value="${v}" min="${lo}" max="${hi}" step="${s}"></label>`,s=(id,l,a,d)=>`<label>${l}<select id="${id}">${o(a,d)}</select></label>`;
  $("#pf").innerHTML=n("Age","Usia",54,20,90)+s("Sex","Jenis kelamin (M/F)",["M","F"],"M")+s("ChestPainType","Tipe nyeri dada",["ASY","ATA","NAP","TA"],"ASY")+n("RestingBP","Tekanan darah (mm Hg)",130,70,220)+n("Cholesterol","Kolesterol (mg/dl)",240,80,620)+s("FastingBS","Gula darah puasa > 120 (1=ya)",["0","1"],"0")+s("RestingECG","EKG istirahat",["Normal","ST","LVH"],"Normal")+n("MaxHR","Detak jantung maks",138,55,210)+s("ExerciseAngina","Angina olahraga",["N","Y"],"N")+n("Oldpeak","Oldpeak",0.8,-3,7,0.1)+s("ST_Slope","ST_Slope",["Up","Flat","Down"],"Flat")+`<div style="align-self:end"><button class="btn" type="submit">Hitung risiko</button></div>`}
-$("#pf").onsubmit=async e=>{e.preventDefault();if(!S)return $("#predOut").innerHTML='<div class="note warn">Muat data di tab Data terlebih dahulu.</div>';
+$("#pf").onsubmit=async e=>{e.preventDefault();if(sb&&!USER)return;if(!S)return $("#predOut").innerHTML='<div class="note warn">Muat data di tab Data terlebih dahulu.</div>';
  const row={};REQ.slice(0,11).forEach(k=>{const v=$("#"+k).value;row[k]=isNaN(v)?v:+v});
  const x=ML.applyScaler(ML.enc(row),S.m.sc),p=Object.fromEntries(Object.entries(S.m.models).map(([k,f])=>[k,f(x)])),avg=(p["Logistic Regression"]+p["Random Forest"])/2,hi=avg>=.5;
  $("#predOut").innerHTML=`<div class="res" style="background:${hi?CORAL:TEAL}"><h3>${hi?"Risiko tinggi":"Risiko rendah"} penyakit jantung</h3>Rata-rata probabilitas: ${pct(avg)} (Logistic Regression ${pct(p["Logistic Regression"])}, Random Forest ${pct(p["Random Forest"])})</div><div class="two">${Object.entries(p).map(([k,v])=>gauge(v,k)).join("")}</div><p class="small">Garis hitam pada gauge menandai ambang 50%.</p>`;
- if(sb)sb.from("predictions").insert({input:row,prob_lr:p["Logistic Regression"],prob_rf:p["Random Forest"]}).then(({error})=>{if(error)console.warn(error.message)})};
+ if(sb){const {error}=await sb.from("predictions").insert({input:row,prob_lr:p["Logistic Regression"],prob_rf:p["Random Forest"]});$("#predOut").insertAdjacentHTML("beforeend",`<p class="small">${error?"Riwayat gagal disimpan: "+esc(error.message):"Hasil tersimpan di tab Riwayat."}</p>`)}};
+// Riwayat pemeriksaan (milik pengguna yang login)
+async function riwayat(quiet){const o=$("#hisOut");if(!sb)return o.innerHTML='<div class="note warn">Fitur riwayat memerlukan Supabase. Isi <code>config.js</code> (lihat README).</div>';
+ if(!USER)return authForm(o,()=>{});
+ const {data,error}=await sb.from("predictions").select("*").eq("user_id",USER.id).order("created_at",{ascending:false}).limit(200);
+ if(error)return o.innerHTML=`<div class="note warn">${esc(error.message)}</div>`;
+ const av=r=>(r.prob_lr+r.prob_rf)/2,hi=data.filter(r=>av(r)>=.5).length,K=["Age","Sex","ChestPainType","RestingBP","Cholesterol","FastingBS","RestingECG","MaxHR","ExerciseAngina","Oldpeak","ST_Slope"];
+ o.innerHTML=`<div class="grid">${stat("Total pemeriksaan",data.length)}${stat("Risiko tinggi",hi)}${stat("Risiko rendah",data.length-hi)}</div>`+(data.length?`<p><button class="btn alt" id="hx">Unduh riwayat (CSV)</button></p><div class="tw"><table><tr>${["Waktu",...K,"Risiko LR","Risiko RF","Rata-rata","Hasil",""].map(x=>`<th>${x}</th>`).join("")}</tr>${data.map(r=>`<tr><td>${esc(new Date(r.created_at).toLocaleString("id-ID"))}</td>${K.map(k=>`<td>${esc(r.input[k])}</td>`).join("")}<td>${pct(r.prob_lr)}</td><td>${pct(r.prob_rf)}</td><td>${pct(av(r))}</td><td style="color:${av(r)>=.5?CORAL:TEAL};font-weight:600">${av(r)>=.5?"Tinggi":"Rendah"}</td><td><button class="btn alt del" data-id="${r.id}" style="padding:.15rem .6rem">Hapus</button></td></tr>`).join("")}</table></div>`:'<div class="note">Belum ada pemeriksaan. Lakukan prediksi di tab Prediksi.</div>');
+ const hx=$("#hx");if(hx)hx.onclick=()=>{const u=URL.createObjectURL(new Blob([Papa.unparse(data.map(r=>({waktu:r.created_at,...r.input,risiko_lr:r.prob_lr,risiko_rf:r.prob_rf,rata_rata:av(r)})))],{type:"text/csv"}));Object.assign(document.createElement("a"),{href:u,download:"riwayat_prediksi.csv"}).click()};
+ o.querySelectorAll(".del").forEach(b=>b.onclick=async()=>{if(!confirm("Hapus pemeriksaan ini?"))return;const {error}=await sb.from("predictions").delete().eq("id",b.dataset.id);error?alert(error.message):riwayat()})}
 // Admin
 async function admin(){const o=$("#admOut");if(!sb)return o.innerHTML='<div class="note warn">Supabase belum diatur. Isi <code>config.js</code> (lihat README).</div>';
  const {data:{session}}=await sb.auth.getSession();
- if(!session){o.innerHTML=`<form id="lf" style="max-width:360px"><label>Email<input id="em" type="email" required autocomplete="username"></label><label>Kata sandi<input id="pw" type="password" required autocomplete="current-password"></label><div><button class="btn" type="submit">Masuk</button></div></form><p id="lm"></p>`;
-  $("#lf").onsubmit=async e=>{e.preventDefault();const {error}=await sb.auth.signInWithPassword({email:$("#em").value,password:$("#pw").value});error?$("#lm").textContent="Gagal masuk: "+error.message:admin()};return}
+ if(!session)return authForm(o,()=>{});
+ if(!(await isAdmin()))return o.innerHTML=`<div class="note warn">Akun <b>${esc(session.user.email)}</b> bukan admin. Riwayat pribadi Anda ada di tab Riwayat.</div>`;
  const {data:h,error}=await sb.from("predictions").select("*").order("created_at",{ascending:false}).limit(20);
  const {data:g}=await sb.storage.from("screenshots").list("",{limit:60,sortBy:{column:"created_at",order:"desc"}});
  o.innerHTML=`<p>Masuk sebagai <b>${esc(session.user.email)}</b> <button class="btn alt" id="lo">Keluar</button></p>
  <h3>Dataset</h3><button class="btn" id="sv" ${S?"":"disabled"}>Simpan dataset yang sedang dimuat ke Supabase</button> <span id="sm"></span>
- <h3>Riwayat prediksi terbaru</h3>${error?esc(error.message):tbl(["Waktu","Usia","Risiko LR","Risiko RF"],(h||[]).map(r=>[new Date(r.created_at).toLocaleString("id-ID"),r.input.Age,pct(r.prob_lr),pct(r.prob_rf)]))}
+ <h3>Semua pemeriksaan terbaru (semua pengguna)</h3>${error?esc(error.message):tbl(["Waktu","Pengguna","Usia","Risiko LR","Risiko RF"],(h||[]).map(r=>[new Date(r.created_at).toLocaleString("id-ID"),r.user_email||"(tanpa akun)",r.input.Age,pct(r.prob_lr),pct(r.prob_rf)]))}
  <h3>Foto screenshot laporan</h3><input type="file" id="up" accept="image/*" style="max-width:320px"> <span id="um"></span>
  <div class="gal">${(g||[]).filter(f=>f.name!==".emptyFolderPlaceholder").map(f=>`<a href="${sb.storage.from("screenshots").getPublicUrl(f.name).data.publicUrl}" target="_blank" rel="noopener"><img loading="lazy" alt="${esc(f.name)}" src="${sb.storage.from("screenshots").getPublicUrl(f.name).data.publicUrl}"></a>`).join("")}</div>`;
- $("#lo").onclick=()=>sb.auth.signOut().then(admin);
+ $("#lo").onclick=()=>sb.auth.signOut();
  $("#sv").onclick=async()=>{const r=S.raw.map(x=>Object.fromEntries(REQ.map(k=>[k,x[k]])));$("#sm").textContent="Menyimpan…";
   for(let i=0;i<r.length;i+=500){const {error}=await sb.from("heart_data").insert(r.slice(i,i+500));if(error)return $("#sm").textContent="Gagal: "+error.message}
   $("#sm").textContent="Tersimpan "+r.length+" baris (data mentah)."};
